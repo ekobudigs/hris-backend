@@ -15,7 +15,7 @@ class EmployeeController extends Controller
 {
     public function fetch(Request $request)
     {
-    
+
         $id = $request->input('id');
         $name = $request->input('name');
         $email = $request->input('email');
@@ -24,22 +24,22 @@ class EmployeeController extends Controller
         $team_id = $request->input('team_id');
         $role_id = $request->input('role_id');
         $limit = $request->input('limit', 10);
-
+        $company_id = $request->input('company_id');
         $employeeQuery = Employee::query();
 
 
 
-       if($id){
-        $employee = $employeeQuery->with(['team', 'role'])->find($id);
+        if ($id) {
+            $employee = $employeeQuery->with(['team', 'role'])->find($id);
 
-        if($employee){
-            return ResponseFormatter::success($employee, 'Employee Found');
+            if ($employee) {
+                return ResponseFormatter::success($employee, 'Employee Found');
+            }
+
+            return ResponseFormatter::error('employee Not Found', '404');
         }
 
-        return ResponseFormatter::error('employee Not Found', '404');
-       }
 
-        
         // Get multiple data
         $employees = $employeeQuery;
 
@@ -62,6 +62,12 @@ class EmployeeController extends Controller
             $employees->where('role_id', $role_id);
         }
 
+        if ($company_id) {
+            $employees->whereHas('team', function ($query) use ($company_id) {
+                $query->where('company_id', $company_id);
+            });
+        }
+
         return ResponseFormatter::success(
             $employees->paginate($limit),
             'Employees found'
@@ -70,41 +76,41 @@ class EmployeeController extends Controller
 
     public function create(CreateEmployeeRequest $request)
     {
-    
-       try {
-        if ($request->hasFile('photo')) {
-            $path = $request->file('photo')->store('public/photos');
+
+        try {
+            if ($request->hasFile('photo')) {
+                $path = $request->file('photo')->store('public/photos');
+            }
+
+            $employee = Employee::create([
+                'name' => $request->name,
+                'email' => $request->email,
+                'gender' => $request->gender,
+                'age' => $request->age,
+                'phone' => $request->phone,
+                'photo' => $path,
+                'team_id' => $request->team_id,
+                'role_id' => $request->role_id,
+            ]);
+
+            if (!$employee) {
+                throw new Exception('employee Nout Found');
+            }
+
+
+            return ResponseFormatter::success($employee, 'employee Created');
+        } catch (\Throwable $th) {
+            return ResponseFormatter::error($th->getMessage(), 500);
         }
-
-        $employee = Employee::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'gender' => $request->gender,
-            'age' => $request->age,
-            'phone' => $request->phone,
-            'photo' => $path,
-            'team_id' => $request->team_id,
-            'role_id' => $request->role_id,
-        ]);
-
-        if (!$employee) {
-           throw new Exception('employee Nout Found');
-        }
-
-
-        return ResponseFormatter::success($employee, 'employee Created');
-       } catch (\Throwable $th) {
-        return ResponseFormatter::error($th->getMessage(), 500);
-       }
     }
 
 
     public function update(UpdateEmployeeRequest $request, $id)
     {
-       
+
         try {
             $employee = Employee::find($id);
-            if(!$employee ){
+            if (!$employee) {
                 throw new Exception('Employee not Found');
             }
 
@@ -122,12 +128,11 @@ class EmployeeController extends Controller
                 'team_id' => $request->team_id,
                 'role_id' => $request->role_id,
             ]);
-            
+
             return ResponseFormatter::success($employee, 'Employee Updated');
         } catch (\Throwable $th) {
             return ResponseFormatter::error($th->getMessage(), 500);
         }
-
     }
 
     public function destroy($id)
@@ -135,7 +140,7 @@ class EmployeeController extends Controller
         try {
             $employee = Employee::find($id);
 
-            if(!$employee){
+            if (!$employee) {
                 throw new Exception('Employee Not Found');
             }
 
