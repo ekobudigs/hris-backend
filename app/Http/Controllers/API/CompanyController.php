@@ -16,7 +16,7 @@ class CompanyController extends Controller
 {
     public function all(Request $request)
     {
-    
+
         $id = $request->input('id');
         $name = $request->input('name');
         $limit = $request->input('limit', 10);
@@ -27,17 +27,17 @@ class CompanyController extends Controller
 
 
 
-       if($id){
-        $company = $companyQuery->find($id);
+        if ($id) {
+            $company = $companyQuery->find($id);
 
-        if($company){
-            return ResponseFormatter::success($company, 'Company Found');
+            if ($company) {
+                return ResponseFormatter::success($company, 'Company Found');
+            }
+
+            return ResponseFormatter::error('company Not Found', '404');
         }
 
-        return ResponseFormatter::error('company Not Found', '404');
-       }
 
-        
         // Get multiple data
         $companies = $companyQuery;
 
@@ -53,39 +53,39 @@ class CompanyController extends Controller
 
     public function create(CreateCompanyRequest $request)
     {
-       try {
-        if ($request->hasFile('logo')) {
-            $path = $request->file('logo')->store('public/logos');
+        try {
+            if ($request->hasFile('logo')) {
+                $path = $request->file('logo')->store('public/logos');
+            }
+
+            $company = Company::create([
+                'name' => $request->name,
+                'logo' => isset($path) ? $path : ''
+            ]);
+
+            if (!$company) {
+                throw new Exception('Company Nout Found');
+            }
+
+
+            $user = User::find(Auth::id());
+            $user->companies()->attach($company->id);
+
+            $company->load('users');
+
+            return ResponseFormatter::success($company, 'Company Created');
+        } catch (\Throwable $th) {
+            return ResponseFormatter::error($th->getMessage(), 500);
         }
-
-        $company = Company::create([
-            'name' => $request->name,
-            'logo' => $path
-        ]);
-
-        if (!$company) {
-           throw new Exception('Company Nout Found');
-        }
-
-
-        $user = User::find(Auth::id());
-        $user->companies()->attach($company->id);
-
-        $company->load('users');
-
-        return ResponseFormatter::success($company, 'Company Created');
-       } catch (\Throwable $th) {
-        return ResponseFormatter::error($th->getMessage(), 500);
-       }
     }
 
 
     public function update(UpdateCompanyRequest $request, $id)
     {
-       
+
         try {
             $company = Company::find($id);
-            if(!$company ){
+            if (!$company) {
                 throw new Exception('Company not Found');
             }
 
@@ -97,12 +97,10 @@ class CompanyController extends Controller
                 'name' => $request->name,
                 'logo' =>  isset($path) ? $path : $company->logo
             ]);
-            
+
             return ResponseFormatter::success($company, 'Company Updated');
         } catch (\Throwable $th) {
             return ResponseFormatter::error($th->getMessage(), 500);
         }
-
     }
-
 }
