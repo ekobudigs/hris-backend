@@ -15,26 +15,26 @@ class TeamController extends Controller
 {
     public function fetch(Request $request)
     {
-    
+
         $id = $request->input('id');
         $name = $request->input('name');
         $limit = $request->input('limit', 10);
 
-        $teamQuery = Team::query();
+        $teamQuery = Team::withCount('employees');
 
 
 
-       if($id){
-        $team = $teamQuery->find($id);
+        if ($id) {
+            $team = $teamQuery->find($id);
 
-        if($team){
-            return ResponseFormatter::success($team, 'Team Found');
+            if ($team) {
+                return ResponseFormatter::success($team, 'Team Found');
+            }
+
+            return ResponseFormatter::error('team Not Found', '404');
         }
 
-        return ResponseFormatter::error('team Not Found', '404');
-       }
 
-        
         // Get multiple data
         $teams = $teamQuery->where('company_id', $request->company_id);
 
@@ -50,35 +50,35 @@ class TeamController extends Controller
 
     public function create(CreateTeamRequest $request)
     {
-       try {
-        if ($request->hasFile('icon')) {
-            $path = $request->file('icon')->store('public/icons');
+        try {
+            if ($request->hasFile('icon')) {
+                $path = $request->file('icon')->store('public/icons');
+            }
+
+            $team = Team::create([
+                'name' => $request->name,
+                'icon' => $path,
+                'company_id' => $request->company_id
+            ]);
+
+            if (!$team) {
+                throw new Exception('team Nout Found');
+            }
+
+
+            return ResponseFormatter::success($team, 'team Created');
+        } catch (\Throwable $th) {
+            return ResponseFormatter::error($th->getMessage(), 500);
         }
-
-        $team = Team::create([
-            'name' => $request->name,
-            'icon' => $path,
-            'company_id' => $request->company_id
-        ]);
-
-        if (!$team) {
-           throw new Exception('team Nout Found');
-        }
-
-
-        return ResponseFormatter::success($team, 'team Created');
-       } catch (\Throwable $th) {
-        return ResponseFormatter::error($th->getMessage(), 500);
-       }
     }
 
 
     public function update(UpdateTeamRequest $request, $id)
     {
-       
+
         try {
             $team = Team::find($id);
-            if(!$team ){
+            if (!$team) {
                 throw new Exception('Team not Found');
             }
 
@@ -91,12 +91,11 @@ class TeamController extends Controller
                 'icon' => isset($path) ? $path : $team->icon,
                 'company_id' => $request->company_id
             ]);
-            
+
             return ResponseFormatter::success($team, 'Team Updated');
         } catch (\Throwable $th) {
             return ResponseFormatter::error($th->getMessage(), 500);
         }
-
     }
 
     public function destroy($id)
@@ -104,7 +103,7 @@ class TeamController extends Controller
         try {
             $team = Team::find($id);
 
-            if(!$team){
+            if (!$team) {
                 throw new Exception('Team Not Found');
             }
 

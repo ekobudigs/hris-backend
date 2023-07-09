@@ -25,7 +25,9 @@ class EmployeeController extends Controller
         $role_id = $request->input('role_id');
         $limit = $request->input('limit', 10);
         $company_id = $request->input('company_id');
-        $employeeQuery = Employee::query();
+
+
+        $employeeQuery = Employee::with('team', 'role');
 
 
 

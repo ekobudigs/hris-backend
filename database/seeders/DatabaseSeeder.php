@@ -25,7 +25,7 @@ class DatabaseSeeder extends Seeder
         //     'name' => 'Test User',
         //     'email' => 'test@example.com',
         // ]);
-            
+
         // Company::factory(10)->create();
         // Team::factory(5)->create();
         // Role::factory(50)->create();
