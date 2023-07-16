@@ -15,13 +15,13 @@ class RoleController extends Controller
 {
     public function fetch(Request $request)
     {
-    
+
         $id = $request->input('id');
         $name = $request->input('name');
         $limit = $request->input('limit', 10);
         $with_responsibility = $request->input('with_responsibility', false);
 
-        $roleQuery = Role::query();
+        $roleQuery = Role::withCount('employees');
 
 
 
@@ -35,7 +35,7 @@ class RoleController extends Controller
         return ResponseFormatter::error('role Not Found', '404');
        }
 
-        
+
         // Get multiple data
         $roles = $roleQuery->where('company_id', $request->company_id);
 
@@ -56,7 +56,7 @@ class RoleController extends Controller
     public function create(CreateRoleRequest $request)
     {
        try {
-      
+
 
         $role = Role::create([
             'name' => $request->name,
@@ -77,20 +77,20 @@ class RoleController extends Controller
 
     public function update(UpdateRoleRequest $request, $id)
     {
-       
+
         try {
             $role = Role::find($id);
             if(!$role ){
                 throw new Exception('Role not Found');
             }
 
-           
+
 
             $role->update([
                 'name' => $request->name,
                 'company_id' => $request->company_id
             ]);
-            
+
             return ResponseFormatter::success($role, 'Role Updated');
         } catch (\Throwable $th) {
             return ResponseFormatter::error($th->getMessage(), 500);
